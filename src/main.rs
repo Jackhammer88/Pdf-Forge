@@ -1,3 +1,4 @@
+use anyhow::{Context, Ok};
 use document::Document;
 
 pub mod ffi;
@@ -6,26 +7,25 @@ mod document;
 #[allow(dead_code)]
 mod page;
 
-fn main() {
-    let mut document = Document::new("file:///home/user/test.pdf")
+fn main() -> anyhow::Result<()> {
+    let mut document = Document::new("file:///home/aleksey/test.pdf")
         .expect("Не удалось открыть документ.");
 
         let total_pages = document.total_pages();
 
         println!("Total pages: {}", total_pages);
 
-        for i in 0..=3 {
-            match document.get_page(i, 2.0) {
-                Ok(page) => {
-                    let filename = format!("page{}.png", i + 1);
-                    if let Err(e) = page.to_png_file(&filename) {
-                        println!("Can't save page {} as PNG: {}", i, e);
-                    }
-                },
-                Err(e) => {
-                    println!("Error fetching page {}: {}", i, e);
-                }
-            }
-        }
-    
+        let page = document.get_page(0)
+            .context("Can't get page 0")?;
+
+        println!("Saving png file...");
+        let filename = format!("page-1.png");
+        page.to_png_file(&filename, 10.0)?;
+        println!("Saved succesfully to {}", &filename);
+
+        println!("Saving to memory...");
+        let bytes = page.to_png_bytes(10.0)?;
+        println!("Saved succesfully {} bytes", bytes.len());
+
+        Ok(())    
 }

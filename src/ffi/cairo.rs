@@ -2,7 +2,6 @@ use std::{
     ffi::c_char,
     os::raw::c_void,
 };
-use std::ptr::copy_nonoverlapping;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -84,26 +83,9 @@ pub struct ByteBuffer {
 
 pub extern "C" fn write_to_memory(closure: *mut c_void, data: *const u8, length: u32) -> cairo_status_t {
     unsafe {
-        let buffer = &mut *(closure as *mut ByteBuffer);
-
-        if buffer.data.is_null() {
-            buffer.data = libc::malloc(length as usize) as *mut u8;
-            if buffer.data.is_null() {
-                return cairo_status_t::CAIRO_STATUS_NO_MEMORY;
-            }
-            buffer.capacity = length as usize;
-        } else if buffer.size + length as usize > buffer.capacity {
-            let new_capacity = buffer.size + length as usize;
-            let new_data = libc::realloc(buffer.data as *mut c_void, new_capacity) as *mut u8;
-            if new_data.is_null() {
-                return cairo_status_t::CAIRO_STATUS_NO_MEMORY;
-            }
-            buffer.data = new_data;
-            buffer.capacity = new_capacity;
-        }
-
-        copy_nonoverlapping(data, buffer.data.add(buffer.size), length as usize);
-        buffer.size += length as usize;
+        let buffer = &mut *(closure as *mut Vec<u8>);
+        let slice = std::slice::from_raw_parts(data, length as usize);
+        buffer.extend_from_slice(slice);
 
         cairo_status_t::CAIRO_STATUS_SUCCESS
     }

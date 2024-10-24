@@ -8,6 +8,7 @@ use crate::ffi::poppler::{
 };
 use crate::page::Page;
 
+#[allow(unused)]
 pub struct Document {
     filename: String,
     total_pages: i32,
@@ -52,6 +53,7 @@ impl Document {
         })
     }
 
+    #[allow(unused)]
     pub fn filename(&self) -> &str {
         &self.filename
     }
@@ -60,16 +62,16 @@ impl Document {
         self.total_pages
     }
 
-    pub fn get_page(&mut self, number: i32, scale: f64) -> Result<Page> {
-        self.get_poppler_page(number, scale)
+    pub fn get_page(&mut self, number: i32) -> Result<Page> {
+        self.get_poppler_page(number)
     }
 
-    fn get_poppler_page(&self, number: i32, scale: f64) -> Result<Page> {
+    fn get_poppler_page(&self, number: i32) -> Result<Page> {
         let poppler_page =
             unsafe { poppler_document_get_page(self.poppler_document, number).as_mut() };
 
         match poppler_page {
-            Some(p) => Page::new(p, scale),
+            Some(p) => Page::new(p),
             None => bail!(format!("Page {} not found in the document.", number)),
         }
     }
